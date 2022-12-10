@@ -1,11 +1,15 @@
 import speech_recognition as sr
+import moviepy.editor as mp
 
+my_clip = mp.VideoFileClip("video/test.mp4")
+filename = "audio/output.wav"
+my_clip.audio.write_audiofile(filename)
 
 def main():
 
     r = sr.Recognizer()
 
-    with sr.Microphone() as source:
+    with sr.AudioFile(filename) as source:
         r.adjust_for_ambient_noise(source)
 
         print("Please say something")
@@ -18,8 +22,7 @@ def main():
         # recognize speech using google
         rec_text =  r.recognize_google(audio, language="ja-JP")
         rec_text = str(rec_text)
-        with open('readme.txt', 'w',encoding = 'utf-8') as f:
-
+        with open('text/readme.txt', 'w',encoding = 'utf-8') as f:
             f.write(rec_text)
 
         with open("recorded.wav", "wb") as f:
