@@ -15,7 +15,7 @@ moviepy
 ```
 pip install moviepy
 ```
-##voice.pyに関して
+##　voice.pyに関して
 マイクではなくて音声ファイルで声の認証をしたいときは
 ```
 with sr.Microphone() as source:
