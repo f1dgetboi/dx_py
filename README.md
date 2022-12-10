@@ -7,3 +7,7 @@ speech recognition
 ```
 pip install speech recognition
 ```
+opencv
+```
+pip install python-opencv
+```
