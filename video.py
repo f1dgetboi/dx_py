@@ -13,7 +13,7 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # Display the resulting frame
     cv2.imshow('frame', gray)
-    if cv2.waitKey(fps) == ord('q'):
+    if cv2.waitKey(int(fps)) == ord('q'):
         break
 # When everything done, release the capture
 cap.release()
