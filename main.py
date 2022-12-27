@@ -1,12 +1,18 @@
 import requests
 from api_secrets import API_KEY_ASSEMBLYAI
 import sys
-
+import json
+import numpy 
 filename = "output.wav"
+projectname = "jj"
+language = "ja"
 upload_endpoint = "https://api.assemblyai.com/v2/upload"
-transcript_endpoint = "https://api.assemblyai.com/v2/transcript/sentences"
+transcript_endpoint = "https://api.assemblyai.com/v2/transcript"
 
-headers = {'authorization': API_KEY_ASSEMBLYAI}
+texts = []
+starts = []
+ends = []
+headers = {'authorization': API_KEY_ASSEMBLYAI,"content-type": "application/json"}
 def uplaod(filename):
     def read_file(filename, chunk_size=5242880):
         with open(filename, 'rb') as _file:
@@ -23,10 +29,11 @@ def uplaod(filename):
     audio_url = uplaod_response.json()["upload_url"]
     return audio_url
 
-def transcribe(audio_url):
-    transcript_request = { "audio_url": audio_url,
-    "language_code":"ja" ,
-}
+def transcribe(audio_url,lan):
+    transcript_request = { 
+    "audio_url": audio_url,
+    "language_code": lan
+    }
 
     transcript_response = requests.post(transcript_endpoint, json=transcript_request, headers=headers)
 
@@ -40,7 +47,7 @@ def poll(transcipt_id):
     return polling_response.json()
 
 def get_transcription_result_url(audio_url):
-    transcipt_id = transcribe(audio_url)
+    transcipt_id = transcribe(audio_url,language)
     while True:
         data = poll(transcipt_id)
         if data['status'] == 'completed':
@@ -50,12 +57,17 @@ def get_transcription_result_url(audio_url):
 
 audio_url = uplaod(filename)
 data, error = get_transcription_result_url(audio_url)
-machine_words = str(data['words'])
-text_filename = filename + "-text"
-machine_filename = filename + "-machine"
+text_filename = projectname + "-text"
+
+
+print(data['words'])
+
+for i in data['words']:
+    texts.append(i['text'])
+    starts.append(i['start'])
+    ends.append(i['end'])
+
+print(texts,starts,ends)
 
 with open(text_filename, 'w',encoding = 'utf-8') as f:
-            f.write(data['text'])
-with open(machine_filename, 'w',encoding = 'utf-8') as n:
-            n.write(machine_words)
-print(data)
+            f.write(str(texts) + "\n" + str(starts) + "\n" + str(ends))
