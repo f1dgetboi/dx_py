@@ -3,6 +3,7 @@ from api_secrets import API_KEY_ASSEMBLYAI
 import sys
 import json
 import numpy 
+
 filename = "output.wav"
 projectname = "jj"
 language = "ja"
