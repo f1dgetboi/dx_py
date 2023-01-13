@@ -17,10 +17,18 @@ class ui_object:
         self.p_y = y_pos
         self.col = col
         self.name = name
+        self.rect = pygame.Rect(self.p_x, self.p_y, self.s_x, self.s_y)
 
     def draw(self):
-        pygame.draw.rect(screen, pygame.Color(self.col), pygame.Rect(self.p_x, self.p_y, self.s_x, self.s_y))
+        pygame.draw.rect(screen, pygame.Color(self.col), self.rect)
 
+    def transformScaleKeepRatio(self, size):
+        iwidth = self.rect.w
+        iheight = self.rect.h
+        scale = min(size[0] / iwidth, size[1] / iheight)
+        #scale = max(size[0] / iwidth, size[1] / iheight)
+        new_size = (round(iwidth * scale), round(iheight * scale))
+        self.rect = pygame.Rect(self.p_x, self.p_y,size[0] // 2, size[1] // 2)
 
 def transformScaleKeepRatio(image, size):
     iwidth, iheight = image.get_size()
@@ -37,9 +45,7 @@ def get_opencv_img_res(opencv_image):
 
 def convert_opencv_img_to_pygame(opencv_image):
     
-    #OpenCVの画像をPygame用に変換.
     rgb_image = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB).swapaxes(0, 1)
-    # OpenCVの画像を元に、Pygameで画像を描画するためのSurfaceを生成する
     pygame_image = pygame.surfarray.make_surface(rgb_image)
 
     return pygame_image
@@ -47,7 +53,7 @@ def convert_opencv_img_to_pygame(opencv_image):
 background = pygame.image.load('image.png').convert_alpha()
 scaled_bg, bg_rect = transformScaleKeepRatio(background, screen.get_size())
 
-rect = ui_object(10,10,100,200,(255,255,255),"text")
+rec = ui_object(400,300,100,200,(255,255,255),"text")
 
 run = True
 while run == True:
@@ -64,14 +70,14 @@ while run == True:
 
         elif event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
-            scaled_bg, bg_rect = transformScaleKeepRatio(background, screen.get_size())
-            rect.transformScaleKeepRatio(screen.get_size())
-
+            #scaled_bg, bg_rect = transformScaleKeepRatio(background, screen.get_size())
+            rec.transformScaleKeepRatio(screen.get_size())
     screen.fill((127, 127, 127))
     screen.blit(pygame_image, (0, 0))
     screen.blit(scaled_bg, bg_rect)
     
     pygame.draw.rect(screen, pygame.Color(255,0,0), pygame.Rect(5, 5, 10, 20))
+    rec.draw()
     pygame.display.flip()
 
 pygame.quit()

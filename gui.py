@@ -1,5 +1,6 @@
 import pygame, sys
 import os
+from pathlib import Path
 
 mainClock = pygame.time.Clock()
 from pygame.locals import *
@@ -15,11 +16,15 @@ FIRST_FRAME_X = 120
 FIRST_FRAME_Y = 85
 font = pygame.font.SysFont(None, 32)
 state = 0
+# alpha = 255
+# error_text_y = 20
 
 def create_text(fontsize,col,x,y,t):
     font = pygame.font.SysFont(None, fontsize)
     text = font.render(t, True, (col))
     screen.blit(text, (x,y))
+
+
 
 def create_window(width, height,background_colour,caption):
     global screen, bg_colour,WIDTH,HEIGHT
@@ -30,7 +35,6 @@ def create_window(width, height,background_colour,caption):
     pygame.display.set_caption(str(caption))
     screen.fill(background_colour)
     pygame.display.flip()
-
 
 class ui_object():
     def __init__(self,size_x,size_y,x_pos,y_pos,col):
@@ -46,6 +50,31 @@ class ui_object():
         #img = font.render(self.text, True, (255,255,255))
         #screen.blit(img, (self.p_x, self.p_y))
 
+class error_text:
+    def __init__(self,error,alpha):
+        if alpha == 255 or alpha < 0:
+            self.alpha = 255
+        else:
+            self.alpha = alpha
+        if self.alpha == 255 or self.alpha < 0:
+            self.y = 20
+        self.font = pygame.font.SysFont(None, 50)
+        self.textsurface = font.render(error, True, (255, 0, 0))
+    
+    def draw(self):
+        self.alpha -= 4
+        self.y += .5         
+        self.textsurface.set_alpha(self.alpha)
+        screen.blit(self.textsurface,(WIDTH/2,self.y))
+
+    def update(self):
+        if self.alpha < 0:   
+            self.alpha = 255
+            self.y = 20
+            return False
+        else: 
+            return True
+    
 class button(ui_object):
 
     def __init__(self,size_x,size_y,x_pos,y_pos,col,text,fontsize,f_col,font=None,childs=None):
@@ -120,6 +149,9 @@ class TextBox:
         self.color = (255, 255, 255)  # White
         self.text = text
         self.scroll = 10
+        self.cursor = True
+        self.cursor_timer = 0
+        self.cursor_interval = 500  # milliseconds
 
         # Pre-render the text to improve performance
         self.text_surface = self.font.render(text, True, (0, 0, 0))  # Black text with per-pixel alpha blending
@@ -141,8 +173,14 @@ class TextBox:
 
             # Update the pre-rendered text
             self.text_surface = self.font.render(self.text, True, (0, 0, 0))  # Black text with per-pixel alpha blending
+            self.text_rect = self.text_surface.get_rect()
+            self.text_rect.center = self.rect.center
+            self.cursor_timer = pygame.time.get_ticks()
 
-        return False
+    def update(self):
+        if pygame.time.get_ticks() - self.cursor_timer > self.cursor_interval:
+            self.cursor = not self.cursor
+            self.cursor_timer = pygame.time.get_ticks()
 
     def draw(self, surface):
         # Render the textbox
@@ -150,12 +188,18 @@ class TextBox:
 
         # Render the text
         surface.blit(self.text_surface, self.text_rect)
+        if self.cursor:
+            cursor_height = self.font.size("A")[1]
+            cursor_x = self.text_rect.right
+            cursor_y = self.text_rect.top + (self.text_rect.height - cursor_height) / 2
+            pygame.draw.line(surface, (0, 0, 0), (cursor_x, cursor_y), (cursor_x, cursor_y + cursor_height), 2)
 
 class menu(button):
     def __init__(self,size_x,size_y,x_pos,y_pos,col,text,fontsize,f_col,font=None,childs=None):
         super().__init__(self,size_x,size_y,x_pos,y_pos,col,text,fontsize,f_col,font=None,childs=None)
         self.clicked = False
-    
+        self.rect = self.rect = pygame.Rect(self.s_x, self.s_y, self.p_x, self.p_y)
+
     def handel_event(self,event):
         if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.rect.collidepoint(event.pos):
@@ -166,8 +210,7 @@ class menu(button):
                         for i in self.childs:
                             i.p_y += self.s_y 
                             i.draw_b(0,0)
-    
-        
+            
 
 create_window(1280,720,(40, 40, 43),"siuu")
 pop_up = button(500,250,WIDTH/2 - 100,HEIGHT/2,(40, 40, 43),"",40,(255,255,255))
@@ -175,9 +218,11 @@ win_white = button(500,25,WIDTH/2 - 100,HEIGHT/2,(255,255,255),"Create Project",
 pop_up_cancel = button(100,35,WIDTH/2 - 90,HEIGHT/2 + 200,(22,22,22),"cancel",45,(255,255,255))
 pop_up_create = button(95,35,WIDTH/2 + 290,HEIGHT/2 + 200,(22,22,22),"create",45,(255,255,255))
 textbox = TextBox(WIDTH/2 - 60 ,HEIGHT/2 + 100, 200, 32, font)
-lmenu = menu(button(100,35,WIDTH/2 - 90,HEIGHT/2 + 200,(22,22,22),"cancel",45,(255,255,255)),[button(95,35,WIDTH/2 + 290,HEIGHT/2 + 200,(22,22,22),"create",45,(255,255,255))])
+lmenu = menu(100,35,WIDTH/2 - 90,HEIGHT/2 + 200,(22,22,22),"cancel",45,(255,255,255),[button(95,35,WIDTH/2 + 290,HEIGHT/2 + 200,(22,22,22),"create",45,(255,255,255))])
 p_up = False
 f_group = []
+error_list = [error_text("cant create project with same name",255)]
+error_draw = []
 
 
 def create_drop_shadow(rect):
@@ -200,6 +245,7 @@ def draw_all():
                 if len(dirlist) > len(f_group):
                     f_group.append(frames(FIRST_FRAME_X + c * 260 + 100 * c,FIRST_FRAME_Y ,c))
             c += 1
+        
         for i in f_group:
             i.create_project_frame()
         create_project.draw_b(0,5)
@@ -211,8 +257,14 @@ def draw_all():
             pop_up_create.draw_b(0,2)
             create_text(40,(255,255,255),WIDTH/2 - 60 ,HEIGHT/2 + 60,"Name")
             textbox.draw(screen)
+            textbox.update()
+        for i in error_draw:
+            if i.update() == False:
+                error_draw.remove(i)
+            i.draw()
     if state == 1:
         lmenu.draw_b(0,0)
+        pass
     #create_project_frame(FIRST_FRAME_X,FIRST_FRAME_Y)
     pygame.display.update()
     
@@ -229,18 +281,25 @@ while True:
                 screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
         if event.type == pygame.MOUSEBUTTONDOWN:
             lmenu.handel_event(event)
-                if create_project.rect.collidepoint(event.pos):
-                    p_up = True
-                    #print("pressed")
-                if p_up == True and pop_up_cancel.rect.collidepoint(event.pos):
-                    p_up = False
-                    #print("pressed")
-                if p_up == True and pop_up_create.rect.collidepoint(event.pos):
-                    newpath = "projects/" + textbox.text
-                    if not os.path.exists(newpath):
-                        os.makedirs(newpath)
-                    p_up = False
-                    state = 1
+            if create_project.rect.collidepoint(event.pos):
+                p_up = True
+                #print("pressed")
+            if p_up == True and pop_up_cancel.rect.collidepoint(event.pos):
+                p_up = False
+                #print("pressed")
+            if p_up == True and pop_up_create.rect.collidepoint(event.pos):
+                newpath = Path("projects/" + textbox.text)
+                if not os.path.exists(newpath):
+                    os.makedirs(newpath)
+                else:
+                    error_draw.append(error_list[0])
+                p_up = False
+                for root, dirs, files in os.walk("projects", topdown=False):
+                    for name in dirs:
+                        if name not in dirs:
+                            dirlist.append(os.path.join(name))
+    
+
         if event.type == KEYDOWN:
             #print("x "+str(image.p_x) + " " + "y "+str(image.p_y) + "\n size x" + str(image.s_x) + "size y" + str(image.s_y))
             textbox.handle_event(event)
@@ -266,8 +325,7 @@ while True:
                     image.s_y +=5
                 if event.key == K_c:
                     image.s_y -=5
-                """
-            
+                """           
                 
             if event.key == K_LALT and K_KP_ENTER:
                 fullscreen = not fullscreen

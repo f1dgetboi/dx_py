@@ -3,6 +3,7 @@ from api_secrets import API_KEY_ASSEMBLYAI
 import sys
 import json
 import numpy 
+import moviepy as mp
 
 filename = "output.wav"
 projectname = "jj"
@@ -72,3 +73,10 @@ print(texts,starts,ends)
 
 with open(text_filename, 'w',encoding = 'utf-8') as f:
             f.write(str(texts) + "\n" + str(starts) + "\n" + str(ends))
+
+
+def write_on_video(lan):
+    if lan == "ja":
+        pass
+    else:
+        pass 
