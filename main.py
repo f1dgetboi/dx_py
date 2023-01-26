@@ -5,7 +5,7 @@ import json
 import numpy 
 import moviepy as mp
 
-filename = "output.wav"
+filename = "ok.wav"
 projectname = "jj"
 language = "ja"
 upload_endpoint = "https://api.assemblyai.com/v2/upload"
@@ -31,10 +31,10 @@ def uplaod(filename):
     audio_url = uplaod_response.json()["upload_url"]
     return audio_url
 
-def transcribe(audio_url,lan):
+def transcribe(audio_url):
     transcript_request = { 
     "audio_url": audio_url,
-    "language_code": lan
+    "language_code": "ja"
     }
 
     transcript_response = requests.post(transcript_endpoint, json=transcript_request, headers=headers)
@@ -49,7 +49,7 @@ def poll(transcipt_id):
     return polling_response.json()
 
 def get_transcription_result_url(audio_url):
-    transcipt_id = transcribe(audio_url,language)
+    transcipt_id = transcribe(audio_url)
     while True:
         data = poll(transcipt_id)
         if data['status'] == 'completed':
