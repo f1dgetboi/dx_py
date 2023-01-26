@@ -1,8 +1,8 @@
 import speech_recognition as sr
 import moviepy.editor as mp
 
-my_clip = mp.VideoFileClip("video/test.mp4")
-filename = "output.wav"
+my_clip = mp.VideoFileClip("test.mp4")
+filename = "audio/output.wav"
 my_clip.audio.write_audiofile(filename)
 
 def main():
