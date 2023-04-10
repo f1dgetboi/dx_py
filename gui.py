@@ -1,10 +1,10 @@
 import pygame, sys
 import os
 from pathlib import Path
-from moviepy.editor import VideoFileClip, TextClip
+import moviepy
 import re
 import cv2
-
+from tkinter import askdirectory
 mainClock = pygame.time.Clock()
 from pygame.locals import *
 pygame.init()
@@ -22,14 +22,8 @@ FIRST_FRAME_Y = 85
 font = pygame.font.SysFont(None, 32)
 state = 1
 middle_frame_state = False
-def add_subtitles(video_file, subtitles_file):
-    video = VideoFileClip(video_file)
-    subtitles = TextClip(subtitles_file, fontsize=24, color='white')
-    final_video = video.set_audio(subtitles)
-    final_video.write_videofile("output.mp4")
-    print('Subtitles added successfully!')
 
-#add_subtitles('ok.mp4', 'subtitles.srt')
+
 def create_text(fontsize,col,x,y,t):
     font = pygame.font.SysFont(None, fontsize)
     text = font.render(t, True, (col))
@@ -115,7 +109,8 @@ class button(ui_object):
     
     def draw_b(self,text_offset_x,text_offset_y):
         if self.linewidth is not None:
-            pygame.draw.rect(screen, pygame.Color(255,255,255),pygame.Rect(self.p_x, self.p_y, self.s_x + self.linewidth, self.s_y+ self.linewidth))
+            pygame.draw.rect(screen, pygame.Color(255,255,255),pygame.Rect(self.p_x - self.linewidth, self.p_y - self.linewidth, self.s_x  + self.linewidth *2, self.s_y + self.linewidth * 2))
+
         pygame.draw.rect(screen, pygame.Color(self.col), self.rect)
         font = pygame.font.SysFont(None, self.fontsize)
         text = font.render(self.text, True, (self.f_col))
@@ -237,11 +232,12 @@ class menu():
                 else:
                     self.clicked = True
 
-    def draw(self):
-        self.button.draw_b(0,0)
+    def draw(self,offsetx,offsety,button_x,button_y):
+
+        self.button.draw_b(offsetx,offsety)
         if self.clicked == True:
             for i in self.options:
-                i.draw_b(0,0)
+                i.draw_b(button_x,button_y)
             
 
 class Video():
@@ -256,13 +252,16 @@ class Video():
     
 
     def draw(self):
-        ret, self.frame = self.cap.read()
-        self.rgb_image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB).swapaxes(0, 1)
-        self.pygame_image = pygame.surfarray.make_surface(self.rgb_image)
-        self.pygame_image = pygame.transform.scale(self.pygame_image, (self.width,self.height))
-        cv2.waitKey(int(self.fps))
-        pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(self.x ,self.y,self.width + 16 ,self.height + 16))
-        screen.blit(self.pygame_image, (self.x + 8, self.y + 8))
+        try:
+            ret, self.frame = self.cap.read()
+            self.rgb_image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB).swapaxes(0, 1)
+            self.pygame_image = pygame.surfarray.make_surface(self.rgb_image)
+            self.pygame_image = pygame.transform.scale(self.pygame_image, (self.width,self.height))
+            cv2.waitKey(int(self.fps))
+            pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(self.x ,self.y,self.width + 16 ,self.height + 16))
+            screen.blit(self.pygame_image, (self.x + 8, self.y + 8))
+        except:
+            pass
 
 create_window(1280,720,(40, 40, 43),"siuu")
 pop_up = button(500,250,WIDTH/2 - 100,HEIGHT/2,(40, 40, 43),"",40,(255,255,255))
@@ -270,11 +269,12 @@ win_white = button(500,25,WIDTH/2 - 100,HEIGHT/2,(255,255,255),"Create Project",
 pop_up_cancel = button(100,35,WIDTH/2 - 90,HEIGHT/2 + 200,(22,22,22),"cancel",45,(255,255,255))
 pop_up_create = button(95,35,WIDTH/2 + 290,HEIGHT/2 + 200,(22,22,22),"create",45,(255,255,255))
 textbox = TextBox(WIDTH/2 - 60 ,HEIGHT/2 + 100, 200, 32, font)
-open_menu = menu(100,35,0,0 ,"Open",["Project","Video","Photo",])
+open_menu = menu(100,40,0,0 ,"Open",["Project","Video","Photo",])
 tools_menu = menu(100,35,0,35 ,"Open",["Project","Video","Photo",])
 video_frame = Video("test.mp4",WIDTH/2 - 135,HEIGHT/2 - 275,900,506)
-video_frame_button = button(100,40,WIDTH/2 - 135,43,(55,55,55),"Video",45,(255,255,255),font,3)
+video_frame_button = button(100,40,WIDTH/2 - 137,43,(55,55,55),"Video",45,(255,255,255),font,3)
 mediapool_button = button(170,40,WIDTH/2 - 32,43,(22,22,22),"Media Pool",45,(255,255,255),font,3)
+add_effect_button = button(170,40,20,51,(22,22,22),"Add effect",45,(255,255,255),font,3)
 p_up = False
 f_group = []
 error_list = [error_text("cant create project with same name",255)]
@@ -290,12 +290,13 @@ def create_drop_shadow(rect):
     
 def draw_background():
     pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(0,40,WIDTH/2 - 140,1000))
-    pygame.draw.line(screen,pygame.Color(255,255,255),(WIDTH/2 - 140,40),(WIDTH/2 - 140,1300),5)
-    pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(WIDTH/2 - 135,HEIGHT/2 + 200,916,540))
-    pygame.draw.line(screen,pygame.Color(255,255,255),(WIDTH/2 - 140,HEIGHT/2 + 250),(1420,HEIGHT/2 + 250),5)
-    pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(1425,40,WIDTH/2 - 140,1000))
-    pygame.draw.line(screen,pygame.Color(255,255,255),(1423,40),(1423,1000),5)
+    pygame.draw.line(screen,pygame.Color(255,255,255),(WIDTH/2 - 140,40),(WIDTH/2 - 140,1000),5)
+    pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(0,HEIGHT/2 + 250,1500,490))
+    pygame.draw.line(screen,pygame.Color(255,255,255),(0,HEIGHT/2 + 250),(1420,HEIGHT/2 + 250),5)
+    pygame.draw.rect(screen,pygame.Color(22,22,22),pygame.Rect(1425,40,WIDTH/2 - 140,1200))
+    pygame.draw.line(screen,pygame.Color(255,255,255),(1423,40),(1423,1200),5)
     pygame.draw.line(screen,pygame.Color(255,255,255),(0,41),(2000,41),3)
+    pygame.draw.line(screen,pygame.Color(255,255,255),(0,100),(WIDTH/2 - 140,100),3)
 
 def draw_all():
     screen.fill(bg_colour)
@@ -328,11 +329,11 @@ def draw_all():
             i.draw()
     if state == 1:
         draw_background()
-        open_menu.draw()
         video_frame_button.draw_b(5,5)
         mediapool_button.draw_b(5,5)
-        
+        add_effect_button.draw_b(5,5)
         video_frame.draw()
+        open_menu.draw(10,7,1,7)
     #print(state)
     #create_project_frame(FIRST_FRAME_X,FIRST_FRAME_Y)
     pygame.display.update()
@@ -363,6 +364,8 @@ while True:
                 video_frame_button.col = (55,55,55)
                 mediapool_button.col = (22,22,22)
 
+            if state == 1 and add_effect_button.rect.collidepoint(event.pos):
+                state = 3
             if p_up == True and pop_up_cancel.rect.collidepoint(event.pos):
                 p_up = False
                 #print("pressed")
